@@ -27,7 +27,7 @@ from KellerhModbus/GetValues.ino
 InsituModel model = Leveltroll_InsituModel;
 
 // Define the sensor's modbus address
-byte modbusAddress = 0x01;  // The sensor's modbus address, or DeviceID
+byte modbusAddress = 0x07;  // The sensor's modbus address, or DeviceID
 // In-situ defines the following:
 //   Address 0 is reserved for broadcasting.
 //   Addresses 1 (default) ...249 can be used for bus mode.
@@ -48,10 +48,15 @@ AltSoftSerial modbusSerial;  // On Mayfly, requires connection D5 & D6
 modbusMaster modbus;
 
 // Construct the Insitu modbus instance
-Insitu sensor;
+Insitu sensorLT500;
 bool success;
 
 int deviceId=0;
+
+//Working variables
+float waterDepthFt     = INSTU_MB_ERROR_RESULTS ;
+float waterTempertureC = INSTU_MB_ERROR_RESULTS ;
+float waterPressureB   = INSTU_MB_ERROR_RESULTS ;
 
 // ---------------------------------------------------------------------------
 // Working Functions
@@ -76,86 +81,78 @@ void setup()
     Serial.begin(115200);  // Main serial port for debugging via USB Serial Monitor
     modbusSerial.begin(9600);  // The modbus serial stream - Baud rate MUST be 9600.
 
-    // Start up the modbus sensor
-    sensor.begin(model, modbusAddress, &modbusSerial, DEREPin);
+    // Start up the modbus sensorLT500
+    sensorLT500.begin(model, modbusAddress, &modbusSerial, DEREPin);
 
     // Turn on debugging
-    //sensor.setDebugStream(&Serial);
+    //sensorLT500.setDebugStream(&Serial);
 
-    // Start up note
-    Serial.println("Insitu LT500 220308-1443");
+    sensorLT500.setDevicePoll(IMDP_DEPTH_TEMPERATURE );
+    Serial.println(F("Insitu LT500 220309-1203"));
+    delay(1000);
+    if (sensorLT500.readDeviceIdFrame()) {
 
-    delay(500);
-
-    //Serial.print("Device Aaddress, as integer: ");
-    Serial.print("DeviceId (");
-    //while (1) 
-    {
-        deviceId=sensor.getDeviceID();
+        Serial.print(F("DeviceId ("));
+        deviceId=sensorLT500.getDeviceHwID();
         Serial.print(deviceId);
-        Serial.print("): ");
+        Serial.print(F("): "));
         //As per Appendix B - device ID
-        switch (deviceId) {
-            case 1:{Serial.println("LT500"); break;}
-            case 2:{Serial.println("LT700"); break;}
-            default:{Serial.println("unknown"); break;}
+        switch (deviceId) 
+        {
+            case 1:{Serial.print(F("LT500")); break;}
+            case 2:{Serial.print(F("LT700")); break;}
+            default:{Serial.print(F("unknown")); break;}
         }
-        //delay(1000);
+        Serial.print(F(" on Addr :"));
+        Serial.println(modbusAddress);
+
+        Serial.print(F("Serial Number: "));
+        Serial.println(sensorLT500.getSerialNumber());
+
+        Serial.print(F("Firmware Version: "));
+        Serial.println(sensorLT500.getDeviceFwVer());
     }
 
-    //Serial.println(sensor.getSlaveID());
-
-    Serial.print("Serial Number: ");
-    Serial.println(sensor.getSerialNumber());
-
-    Serial.println("Starting sensor measurements");
-
-    Serial.println("Allowing sensor to stabilize..");
+    Serial.print(F("Sensor warmup "));
     for (int i = 5; i > 0; i--)     // 4 second delay
     {
         Serial.print(i);
         delay (250);
-        Serial.print(".");
+        Serial.print(F("."));
         delay (250);
-        Serial.print(".");
+        Serial.print(F("."));
         delay (250);
-        Serial.print(".");
+        Serial.print(F("."));
         delay (250);
     }
     Serial.println("\n");
 
-    Serial.print(",Temp(°C),  ");
-    Serial.print("Pressure(bar),  ");
-    Serial.print("Depth (mWC)   ,");
-    Serial.print("Depth (ft),");
+    //Output formating make so easy to import into csv file
+    Serial.print(F(",Temp(°C)    "));
+    //Serial.print(F("Pressure(bar),  "));
+    //Serial.print(F("Depth (mWC)   ,"));
+    Serial.print(F(",Depth (ft)"));
     Serial.println();
 
 }
 
-// Initialize variables
-float waterPressureBar = INSTU_MB_ERROR_RESULTS ;
-float waterTempertureC = INSTU_MB_ERROR_RESULTS ;
-float waterDepth1      = INSTU_MB_ERROR_RESULTS ;
-float waterDepthM      = INSTU_MB_ERROR_RESULTS ;
 
 // ---------------------------------------------------------------------------
 // Main loop function
 // ---------------------------------------------------------------------------
 void loop()
 {
-    sensor.getValues(waterPressureBar, waterTempertureC,waterDepth1 );
-    waterDepthM = sensor.calcWaterDepthM(waterPressureBar, waterTempertureC);  // float calcWaterDepthM(float waterPressureBar, float waterTempertureC)
-
-    Serial.print(",");
+    sensorLT500.getLtReadings(waterDepthFt,waterTempertureC,waterPressureB );
+ 
+    Serial.print(F(","));
     Serial.print(waterTempertureC);
-    Serial.print(",      ");
-    Serial.print(waterPressureBar, 7);
-    Serial.print(",     ");
-    Serial.print(waterDepthM, 6);
-    Serial.print(",     ");
-    Serial.print(waterDepth1, 6);
+    Serial.print(F(",      "));
+    //Serial.print(waterPressureBar, 7);
+    //Serial.print(F(",     "));
+    //Serial.print(waterDepthM, 6);
+    //Serial.print(F(",     "));
+    Serial.print(waterDepthFt, 6);
     Serial.println();
 
     delay(5000);
-
 }

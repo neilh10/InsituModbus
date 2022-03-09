@@ -1,11 +1,15 @@
 /*
 InsituModbus.cpp
 
-Written by Neil Hancock
+Written by Neil Hancock from KellerVersion
 
 Tested with 
-- a Insitu Series Level Troll series transducers
+- a Insitu Series Level Troll series transducers LT500 - System Spec 1
+Reference
+In-Situ Modbus Communication Protocol Version 5.10
 - https://in-situ.com/us/pub/media/support/documents/Modbus_Manual.pdf
+ All In-Situ Registers are Holding Registers ie access as 0x03 MODBUS_READ_HREG
+
 
 */
 
@@ -17,8 +21,7 @@ Tested with
 //----------------------------------------------------------------------------
 
 
-// This function sets up the communication
-// It should be run during the arduino "setup" function.
+// Start the communication
 // The "stream" device must be initialized and begun prior to running this.
 bool Insitu::begin(InsituModel model,byte modbusDeviceID, Stream *stream, int enablePin)
 {
@@ -29,85 +32,63 @@ bool Insitu::begin(InsituModel model,byte modbusDeviceID, Stream *stream, int en
     bool success = modbus.begin(modbusDeviceID, stream, enablePin);
     return success;
 }
+
 bool Insitu::begin(InsituModel model,byte modbusDeviceID, Stream &stream, int enablePin)
-{return begin(model,modbusDeviceID, &stream, enablePin);}
+{
+    return begin(model,modbusDeviceID, &stream, enablePin);
+}
 
 
 // This gets the modbus Device ID.
 // 2.3.1.8
-byte Insitu::getDeviceID(void) //njh tested, gets something
+uint16_t Insitu::getDeviceHwID(void) //njh tested
 {
     //2.3.1.8 Report (Slave) Device ID  special register 
-    return modbus.byteFromRegister(MODBUS_READ_HREG, INSTU_MB_DEVICE_ID_REG, 3); 
+    return modbus.uint16FromFrame(bigEndian, INSTU_MB_RDDEV_DEV_ID_IDX); 
+}
+float Insitu::getDeviceFwVer(void) //njh tested
+{
+    //2.3.1.8 Report (Slave) Device ID  special register 
+    return (modbus.uint16FromFrame(bigEndian, INSTU_MB_RDDEV_FW_VER_IDX )/100); 
+}
+
+bool Insitu::readDeviceIdFrame(void) 
+{   
+    bool retRsp = false;
+    //From 2.3.1.8 Report Slave Id - 
+#define RDID_LEN 4
+    byte command[RDID_LEN];
+
+    command[0] = _deviceID;
+    command[1] = MODBUS_REPORT_DEV_ID;
+    //command 2 & 3 ~ crc
+
+    // Send cmd with reTry
+    int tries = 10;
+    int16_t respSize = 0;
+    do
+    {
+        // Send to instrument (this adds the CRC)
+        respSize = modbus.sendCommand(command,RDID_LEN);
+        if (INSTU_MB_RDDEV_LEN_VAL <= respSize) {
+            retRsp = true;
+            break;
+        }
+        //Serial.print("Retry: received ");
+        //Serial.println(respSize);
+        delay(25);
+    } while (0 < --tries );
+
+    return retRsp;//modbus.byteFromRegister(0x03, 0x11, 3); 
     //return modbus.byteFromRegister(0x03, 0x11, 0); // byte byteFromRegister(byte regType, int regNum, int byteNum)
 }
 
-byte Insitu::getSlaveID(void)
-{
-    return getDeviceID();
-}
-
-#if 0
-byte Insitu::getDeviceIDFrame(void) 
-{
-    //2.3.1.8 Report Device ID
-    /*for (int i=0;i<0x11;i++) {
-        modbus.byteFromRegister(0x03, i, 3); 
-    }*/
-    modbus.byteFromRegister(0x03, 0, 3);
-    modbus.uint16FromRegister(0x03, 1);  
-    modbus.byteFromRegister(0x03, 3,3);
-    modbus.uint32FromRegister(0x03, 4);  //Time
-    //modbus.uint32FromRegister(0x03, 8);  
-    modbus.getRegisters(0x03,0,8);
-    return 0;//modbus.byteFromRegister(0x03, 0x11, 3); 
-    //return modbus.byteFromRegister(0x03, 0x11, 0); // byte byteFromRegister(byte regType, int regNum, int byteNum)
-}
-#endif //0
-
-// This sets a new modbus device ID
-// NOTE: NOT TESTED
-// bool Insitu:::setDeviceID(byte newDeviceID)
-// {
-//     return modbus.byteToRegister(0x020D, 2, newDeviceID); //bool byteToRegister(int regNum, int byteNum, byte value, bool forceMultiple=false);
-// }
-
-/*byte Insitu::getDeviceID(void) //njh tested, gets something
-{
-    //#define IL_DEVICE_LEN 5
-    //byte command[IL_DEVICE_LEN ];
-    //comamnd 
-    //sendCommand(byte command[], int commandLength);
-
-    //2.3.1.8 Report Device ID
-    return modbus.byteFromRegister(0x03, 0x9001, 3); 
-    //return modbus.byteFromRegister(0x03, 0x11, 0); // byte byteFromRegister(byte regType, int regNum, int byteNum)
-} */
-
-// This gets the instrument serial number as a 16-bit unsigned integer (as specified by Insitu)
-// The Serial number is in holding registers 0x2 or 9002 and occupies 2 registers (uint16)
+// This gets the instrument serial number as a 32-bit unsigned integer (as specified by Insitu)
 long Insitu::getSerialNumber(void) //Nh Gets something 
 {
-    return modbus.uint16FromRegister(MODBUS_READ_HREG, INSTU_MB_DEVICE_SN_REG);  //Sect 7 Common registers
+    return modbus.uint32FromFrame(bigEndian, INSTU_MB_RDDEV_SERIAL_NUM_IDX); 
 }
 
-
-// This gets the hardware and software version of the sensor
-// This data begins in holding register 0x020E (??) and continues for 2 registers
-// bool Insitu::getVersion(float &ClassGroup, float &YearWeek)
-// {
-//     // Parse into version numbers, as a string "Class.Group-Year:Week"
-//     // These aren't actually little endian responses.
-//     // The first byte is the Class
-//     // The second byte is the Group
-//     if (modbus.getRegisters(0x03, 0x020E, 2))
-//     {
-//         ClassGroup = modbus.byteFromFrame(3) + (float)modbus.byteFromFrame(4) / 100;
-//         YearWeek = modbus.byteFromFrame(5) + (float)modbus.byteFromFrame(6) / 100;
-//         return true;
-//     }
-//     else return false;
-// }
 
 // This returns previously fetched value
 bool Insitu::getValueLastTempC(float &value)
@@ -115,35 +96,48 @@ bool Insitu::getValueLastTempC(float &value)
     value =  _LastTOB1;
     return true;
 }
-// This gets values back from the sensor
-bool Insitu::getValues(float &valueP1, float &valueTOB1, float &valueDepth1)
-{
-    // Set values to -9999 and error flagged before asking for the result
 
-    valueP1   = INSTU_MB_ERROR_RESULTS;  // Pressure (bar) for sensor1
-    valueTOB1 = INSTU_MB_ERROR_RESULTS;  // Temperature (C) on board sensor 1
-    valueDepth1 = INSTU_MB_ERROR_RESULTS;  // Depth (?) on board sensor 1
+bool Insitu::getLtReadings( float &valueDepth1,float &valueTOB1,float &valueP1)
+{
 
     switch(_model)
     {
-        default:  // for all other sensors get two values in one message
+        default:  //Leveltroll_InsituModel  for water sensors 
         {
-            if (modbus.getRegisters(MODBUS_READ_HREG, INSTU_MB_DEVICE_PARAM1_VALUE, MODBUS_RD_2REG))
-            {
-                valueP1 = modbus.float32FromFrame(bigEndian, MODBUS_FM_START);
-                _LastPressure1 = valueP1;
-
-            }
-            if (modbus.getRegisters(MODBUS_READ_HREG, INSTU_MB_DEVICE_PARAM2_VALUE, MODBUS_RD_2REG))
-            {
-                valueTOB1 = modbus.float32FromFrame(bigEndian, MODBUS_FM_START);
+            if (IMDP_PRESSURE & _devToPoll) {
+                if (modbus.getRegisters(MODBUS_READ_HREG, INSTU_MB_DEVICE_PARAM1_VALUE, INSTU_MB_PARAM_VALUE_SZ)) {
+                    valueP1 = modbus.float32FromFrame(bigEndian, MODBUS_FM_START);
+                } else {
+                    valueP1 = INSTU_MB_ERROR_RESULTS;  // Temperature (C) on board sensor 1
+                }
+                _LastPressure1 = valueP1;                            
+            } //IMDP_PRESSURE 
+            if (IMDP_TEMPERATURE & _devToPoll) {
+                if (modbus.getRegisters(MODBUS_READ_HREG, INSTU_MB_DEVICE_PARAM2_VALUE, INSTU_MB_PARAM_VALUE_SZ)) {
+                    valueTOB1 = modbus.float32FromFrame(bigEndian, MODBUS_FM_START);
+                }else {
+                    valueTOB1 = INSTU_MB_ERROR_RESULTS;  // Temperature (C) on board sensor 1
+                }
                 _LastTOB1 = valueTOB1;
-            }
-            if (modbus.getRegisters(MODBUS_READ_HREG, INSTU_MB_DEVICE_PARAM3_VALUE , MODBUS_RD_2REG))
-            {
-                valueDepth1 = modbus.float32FromFrame(bigEndian, MODBUS_FM_START);
+            }//IMDP_TEMPERATURE
+            if (IMDP_DEPTH & _devToPoll) {
+                if (modbus.getRegisters(MODBUS_READ_HREG, INSTU_MB_DEVICE_PARAM3_VALUE , INSTU_MB_PARAM_VALUE_SZ)) {
+                    valueDepth1 = modbus.float32FromFrame(bigEndian, MODBUS_FM_START);
+                }else {
+                    valueDepth1 = INSTU_MB_ERROR_RESULTS;  // Depth (?) on board sensor 1
+                }
                 _LastDepth =valueDepth1;
-            }            
+            }//IMDP_DEPTH 
+            #if 0
+            if (IMDP_POWER_MV & _devToPoll) { //Only Leel TROLL 300 500 700 & Baro Troll 500
+                if (modbus.getRegisters(MODBUS_READ_HREG, INSTU_MB_PARAM_POWER_MV_REG , INSTU_MB_PARAM_POWER_MV_SZ)) {
+                    valueDepth1 = modbus.float32FromFrame(bigEndian, MODBUS_FM_START);
+                }else {
+                    valueDepth1 = INSTU_MB_ERROR_RESULTS;  // Depth (?) on board sensor 1
+                }
+                _LastDepth =valueDepth1;
+            }//IMDP_POWER_MV 
+            #endif //0
         }
     }
     
@@ -151,6 +145,7 @@ bool Insitu::getValues(float &valueP1, float &valueTOB1, float &valueDepth1)
     return true;
 }
 
+#if 0
 float Insitu::calcWaterDepthM(float &waterPressureBar, float &waterTempertureC)
 {
     /// Initialize variables
@@ -178,3 +173,4 @@ float Insitu::calcWaterDepthM(float &waterPressureBar, float &waterTempertureC)
     #define M_TO_FEET 3.28084
     return waterDepthM/M_TO_FEET ;
 }
+#endif
