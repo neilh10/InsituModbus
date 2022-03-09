@@ -1,12 +1,9 @@
 /*
 InsituModbus.h
 
-Written by Anthony Aufdenkampe Modified Neil Hancock
+Written by Neil Hancock
 
-Tested with Acculevel, Nanolevel
-- a Insitu Series 30, Class 5, Group 20 sensor
-- Software version 5.20-12.28 and later (i.e. made after the 2012 in the 28th week)
-
+Tested with In-Situ Level Troll 500
 */
 
 #ifndef InsituModbus_h
@@ -25,6 +22,29 @@ typedef enum InsituModel
     OTHER=99   // Use if the sensor model is another model.
 } InsituModel;
 
+#define INSTU_MB_ERROR_RESULTS -9999
+
+//Section 7 
+#define INSTU_MB_DEVICE_MAP_BASE 0
+#define INSTU_MB_DEVICE_ID_REG (0+INSTU_MB_DEVICE_MAP_BASE)
+#define INSTU_MB_DEVICE_ID_SZ 1
+#define INSTU_MB_DEVICE_SN_REG (01+INSTU_MB_DEVICE_MAP_BASE)
+#define INSTU_MB_DEVICE_PARAM1_BASE  37
+#define INSTU_MB_DEVICE_PARAM2_BASE  45
+#define INSTU_MB_DEVICE_PARAM3_BASE  53
+#define INSTU_MB_PARAM_VALUE    0
+#define INSTU_MB_PARAM_ID       2
+#define INSTU_MB_PARAM_UNITS_ID 3
+#define INSTU_MB_PARAM_QLTY_ID  4
+#define INSTU_MB_PARAM_SENT_VALUE  5
+//
+#define INSTU_MB_DEVICE_PARAM1_VALUE (INSTU_MB_DEVICE_PARAM1_BASE +INSTU_MB_PARAM_VALUE )
+#define INSTU_MB_DEVICE_PARAM2_VALUE (INSTU_MB_DEVICE_PARAM2_BASE +INSTU_MB_PARAM_VALUE )
+#define INSTU_MB_DEVICE_PARAM3_VALUE (INSTU_MB_DEVICE_PARAM3_BASE +INSTU_MB_PARAM_VALUE )
+
+//Sect 6 Probe Common Registers  doesn't seem to support
+//#define INSTU_MB_DEVICE_MAP9_BASE 9000
+
 class Insitu
 {
 
@@ -33,16 +53,16 @@ public:
     // This function sets up the communication
     // It should be run during the arduino "setup" function.
     // The "stream" device must be initialized prior to running this.
-    bool begin(InsituModel model, byte modbusSlaveID, Stream *stream, int enablePin = -1);
-    bool begin(InsituModel model, byte modbusSlaveID, Stream &stream, int enablePin = -1);
+    bool begin(InsituModel model, byte modbusDeviceID, Stream *stream, int enablePin = -1);
+    bool begin(InsituModel model, byte modbusDeviceID, Stream &stream, int enablePin = -1);
 
-    // This gets the modbus slave ID.
-    byte getSlaveID(void);
-    byte getSlaveIDFrame(void); 
+    // This gets the modbus Device ID.
+    byte getDeviceID(void);
+    byte getSlaveID(void); //Superseded getDiviceId
 
-    // This sets a new modbus slave ID
+    // This sets a new modbus device ID
     // NOTE: NOT YET WORKING
-//    bool setSlaveID(byte newSlaveID);
+//    bool setDeviceID(byte newDeviceID);
 
     // This gets the instrument serial number as a long integer
     long getSerialNumber(void);
@@ -59,7 +79,7 @@ public:
 
 
     // This gets values back from the sensor
-    bool getValues(float &valueP1, float &valueTOB1);
+    bool getValues(float &valueP1, float &valueTOB1, float &valueDepth1);
     bool getValueLastTempC(float &value);
 //    bool getValues(float &parmValue, float &tempValue, byte &errorCode);
 
@@ -72,8 +92,10 @@ public:
 
 private:
     byte _model;
-    byte _slaveID;
+    byte _deviceID;
+    float _LastPressure1;
     float _LastTOB1;
+    float _LastDepth;
 
     modbusMaster modbus;
 };
