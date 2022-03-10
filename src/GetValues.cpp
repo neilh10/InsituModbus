@@ -26,8 +26,8 @@ from KellerhModbus/GetValues.ino
 // Define the sensor type for Modbus processing
 InsituModel model = Leveltroll_InsituModel;
 
-// Define the sensor's modbus address
-byte modbusAddress = 0x07;  // The sensor's modbus address, or DeviceID
+// Define the sensor's modbus address - needs to match the sensor, set with Win-Situ
+byte modbusAddress = 0x01;  // The sensor's modbus address, or DeviceID  
 // In-situ defines the following:
 //   Address 0 is reserved for broadcasting.
 //   Addresses 1 (default) ...249 can be used for bus mode.

@@ -50,7 +50,7 @@ uint16_t Insitu::getDeviceHwID(void) //njh tested
 float Insitu::getDeviceFwVer(void) //njh tested
 {
     //2.3.1.8 Report (Slave) Device ID  special register 
-    return (modbus.uint16FromFrame(bigEndian, INSTU_MB_RDDEV_FW_VER_IDX )/100); 
+    return (((float)modbus.uint16FromFrame(bigEndian, INSTU_MB_RDDEV_FW_VER_IDX ))/100); 
 }
 
 bool Insitu::readDeviceIdFrame(void) 
