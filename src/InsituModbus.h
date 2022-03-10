@@ -104,6 +104,7 @@ public:
     bool getLtReadings(float &valueDepth1, float &valueTOB1,float &vwaterPressureB );
     bool getValueLastTempC(float &value);
 
+    static bool excpHandler(byte excpt);
     // This sets a stream for debugging information to go to;
     void setDebugStream(Stream *stream){modbus.setDebugStream(stream);}
     void stopDebugging(void){modbus.stopDebugging();}
@@ -116,6 +117,8 @@ private:
     float _LastPressure1;
     float _LastTOB1;
     float _LastDepth;
+    //excpInstuHandler_t _excpInstuHandler_fn = NULL;
+    //static Stream *_debugStream1;  // The stream instance (serial port) for debugging
 
     modbusMaster modbus;
 };

@@ -88,7 +88,7 @@ void setup()
     //sensorLT500.setDebugStream(&Serial);
 
     sensorLT500.setDevicePoll(IMDP_DEPTH_TEMPERATURE );
-    Serial.println(F("Insitu LT500 220309-1203"));
+    Serial.println(F("Insitu LT500 220309-1648"));
     delay(1000);
     if (sensorLT500.readDeviceIdFrame()) {
 

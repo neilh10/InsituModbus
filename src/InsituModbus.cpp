@@ -30,6 +30,7 @@ bool Insitu::begin(InsituModel model,byte modbusDeviceID, Stream *stream, int en
     _model = model;
     // Start up the modbus instance
     bool success = modbus.begin(modbusDeviceID, stream, enablePin);
+    //modbus.registerErrHandler(excpHandler);
     return success;
 }
 
@@ -144,6 +145,46 @@ bool Insitu::getLtReadings( float &valueDepth1,float &valueTOB1,float &valueP1)
 
     return true;
 }
+
+bool Insitu::excpHandler(byte excpt) {
+#if 0
+    if (NULL == Insitu::_debugStream1) return false; //Not handled
+    Stream *_debugStream = Insitu::_debugStream1;
+    switch(excpt) {
+        //In-situ Extended 
+        case 0x80:{_debugStream->println(F("Field Mismatch")); break;}
+        case 0x81:{_debugStream->println(F("Wr Only")); break;}
+        case 0x82:{_debugStream->println(F("Rd Only")); break;}
+        case 0x83:{_debugStream->println(F("Access Level")); break;}
+        case 0x84:{_debugStream->println(F("Wr value")); break;}
+        case 0x85:{_debugStream->println(F("Cmd Seq")); break;}
+        case 0x86:{_debugStream->println(F("File Seq")); break;}
+        case 0x87:{_debugStream->println(F("File Cmd")); break;}
+        case 0x88:{_debugStream->println(F("File Number")); break;}
+        case 0x89:{_debugStream->println(F("File Size")); break;}
+        case 0x8A:{_debugStream->println(F("File Data")); break;}
+        case 0x8B:{_debugStream->println(F("File Interval")); break;}
+        case 0x90:{_debugStream->println(F("Gateway Err")); break;}
+        case 0x91:{_debugStream->println(F("Sensor Seq")); break;}
+        case 0x92:{_debugStream->println(F("Sensor Mode")); break;}
+        case 0x93:{_debugStream->println(F("Sensor Config")); break;}
+        case 0x94:{_debugStream->println(F("Sensor Missing")); break;}
+        case 0x95:{_debugStream->println(F("Sensor Invalid")); break;}
+        case 0x96:{_debugStream->println(F("Sensors Firmware")); break;}
+        case 0xA0:{_debugStream->println(F("Data Log Reg")); break;}
+        case 0xA1:{_debugStream->println(F("Data Log Mem")); break;}
+        case 0xA2:{_debugStream->println(F("Data Log Dir")); break;}
+        case 0xA3:{_debugStream->println(F("Data Log Edit")); break;}
+        case 0xA4:{_debugStream->println(F("Data Log Seq")); break;}
+        default: 
+            return false;
+            break;
+    }
+    return true;
+#else 
+    return false;
+#endif //0
+ }
 
 #if 0
 float Insitu::calcWaterDepthM(float &waterPressureBar, float &waterTempertureC)
