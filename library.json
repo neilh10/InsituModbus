@@ -15,7 +15,7 @@
     },
     {
       "name": "Anthony Aufdenkampe",
-      "email": "aaufdenkampe@limno.com",
+      "email": "aaufdenkampe@limno.com"
     }
   ],
   "license": "BSD-3-Clause",
@@ -23,14 +23,10 @@
   "platforms": "atmelavr, atmelsam",
   "dependencies": [
     {
-      "name": "SensorModbusMaster",
-      "library id": "1824",
-      "url": "https://github.com/EnviroDIY/SensorModbusMaster.git",
+      "name": "SensorModbusMasterNh",
+      "url": "https://github.com/neilh10/SensorModbusMaster.git",
       "version": ">=0.6.2",
-      "note": "EnviroDIY SensorModbusMaster - Arduino library for communicating via modbus with the Arduino acting as the modbus master.",
-      "authors": ["Sara Damiano"],
-      "frameworks": "arduino",
-      "platforms": "atmelavr, atmelsam"
+      "note": "EnviroDIY SensorModbusMaster - Arduino library for communicating via modbus with the Arduino acting as the modbus master."
     }
   ],
   "examples": ["examples/*/*.ino", "utilities/*/*.ino"],
