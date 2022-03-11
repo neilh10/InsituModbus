@@ -1,11 +1,12 @@
 /*****************************************************************************
-Keller/GetValues.ino
+GetValues.ino
 
-Modified by Anthony Aufdenkampe, from YosemitechModbus/GetValues.ino
-2018-April
+Modified by Neil Hancock
+2022-Mar
 
-For testing individual functions in KellerModbus library
-
+For testing individual functions in InsituModbus library
+on a Mayfly with Modbus Wingboard (knh002rev7)
+from KellerhModbus/GetValues.ino
 *****************************************************************************/
 
 // ---------------------------------------------------------------------------
@@ -14,7 +15,7 @@ For testing individual functions in KellerModbus library
 #include <Arduino.h>
 #include <AltSoftSerial.h>
 #include <SensorModbusMaster.h>
-#include "KellerModbus.h"
+#include "InsituModbus.h"
 
 
 // ---------------------------------------------------------------------------
@@ -22,12 +23,12 @@ For testing individual functions in KellerModbus library
 //   ie, pin locations, addresses, calibrations and related settings
 // ---------------------------------------------------------------------------
 
-// Define the sensor type
-kellerModel model = Acculevel_kellerModel;
+// Define the sensor type for Modbus processing
+InsituModel model = Leveltroll_InsituModel;
 
-// Define the sensor's modbus address
-byte modbusAddress = 0x01;  // The sensor's modbus address, or SlaveID
-// Keller defines the following:
+// Define the sensor's modbus address - needs to match the sensor, set with Win-Situ
+byte modbusAddress = 0x01;  // The sensor's modbus address, or DeviceID  
+// In-situ defines the following:
 //   Address 0 is reserved for broadcasting.
 //   Addresses 1 (default) ...249 can be used for bus mode.
 //   Address 250 is transparent and reserved for non-bus mode. Every device can be contacted with this address.
@@ -46,18 +47,24 @@ AltSoftSerial modbusSerial;  // On Mayfly, requires connection D5 & D6
 // Construct the modbus instance
 modbusMaster modbus;
 
-// Construct the Keller modbus instance
-keller sensor;
+// Construct the Insitu modbus instance
+Insitu sensorLT500;
 bool success;
 
+int deviceId=0;
+
+//Working variables
+float waterDepthFt     = INSTU_MB_ERROR_RESULTS ;
+float waterTempertureC = INSTU_MB_ERROR_RESULTS ;
+float waterPressureB   = INSTU_MB_ERROR_RESULTS ;
 
 // ---------------------------------------------------------------------------
 // Working Functions
 // ---------------------------------------------------------------------------
 
 // Give values to variables;
-// byte modbusSlaveID = modbusAddress;
-// byte _slaveID = modbusSlaveID;
+// byte modbusDeviceID = modbusAddress;
+// byte _DeviceID = modbusDeviceID;
 
 
 // ---------------------------------------------------------------------------
@@ -71,70 +78,83 @@ void setup()
 
     if (DEREPin > 0) pinMode(DEREPin, OUTPUT);
 
-    Serial.begin(57600);  // Main serial port for debugging via USB Serial Monitor
+    Serial.begin(115200);  // Main serial port for debugging via USB Serial Monitor
     modbusSerial.begin(9600);  // The modbus serial stream - Baud rate MUST be 9600.
 
-    // Start up the modbus sensor
-    sensor.begin(model, modbusAddress, &modbusSerial, DEREPin);
+    // Start up the modbus sensorLT500
+    sensorLT500.begin(model, modbusAddress, &modbusSerial, DEREPin);
 
     // Turn on debugging
-    // sensor.setDebugStream(&Serial);
+    #if !defined SENSORMODBUSMASTER_NO_DBG
+    sensorLT500.setDebugStream(&Serial);
+    #endif
 
-    // Start up note
-    Serial.println("Keller Acculevel (or other Series 30, Class 5, Group 20 sensor)");
+    sensorLT500.setDevicePoll(IMDP_DEPTH_TEMPERATURE );
+    Serial.println(F("Insitu LT500 220309-1648"));
+    delay(1000);
+    if (sensorLT500.readDeviceIdFrame()) {
 
-    Serial.println("Waiting for sensor and adapter to be ready.");
-    delay(500);
+        Serial.print(F("DeviceId ("));
+        deviceId=sensorLT500.getDeviceHwID();
+        Serial.print(deviceId);
+        Serial.print(F("): "));
+        //As per Appendix B - device ID
+        switch (deviceId) 
+        {
+            case 1:{Serial.print(F("LT500")); break;}
+            case 2:{Serial.print(F("LT700")); break;}
+            default:{Serial.print(F("unknown")); break;}
+        }
+        Serial.print(F(" on Addr :"));
+        Serial.println(modbusAddress);
 
-    Serial.print("Device Address, as integer: ");
-    Serial.println(sensor.getSlaveID());
+        Serial.print(F("Serial Number: "));
+        Serial.println(sensorLT500.getSerialNumber());
 
-    Serial.print("Serial Number: ");
-    Serial.println(sensor.getSerialNumber());
+        Serial.print(F("Firmware Version: "));
+        Serial.println(sensorLT500.getDeviceFwVer());
+    }
 
-    Serial.println("Starting sensor measurements");
-
-    Serial.println("Allowing sensor to stabilize..");
+    Serial.print(F("Sensor warmup "));
     for (int i = 5; i > 0; i--)     // 4 second delay
     {
         Serial.print(i);
         delay (250);
-        Serial.print(".");
+        Serial.print(F("."));
         delay (250);
-        Serial.print(".");
+        Serial.print(F("."));
         delay (250);
-        Serial.print(".");
+        Serial.print(F("."));
         delay (250);
     }
     Serial.println("\n");
 
-    Serial.print("Temp(°C)  ");
-    Serial.print("Pressure(bar)  ");
-    Serial.print("Depth (mWC)");
+    //Output formating make so easy to import into csv file
+    Serial.print(F(",Temp(°C)    "));
+    //Serial.print(F("Pressure(bar),  "));
+    //Serial.print(F("Depth (mWC)   ,"));
+    Serial.print(F(",Depth (ft)"));
     Serial.println();
 
 }
 
-// Initialize variables
-float waterPressureBar = -9999.0;
-float waterTempertureC = -9999.0;
-float waterDepthM = -9999.0;
 
 // ---------------------------------------------------------------------------
 // Main loop function
 // ---------------------------------------------------------------------------
 void loop()
 {
-    sensor.getValues(waterPressureBar, waterTempertureC);
-    waterDepthM = sensor.calcWaterDepthM(waterPressureBar, waterTempertureC);  // float calcWaterDepthM(float waterPressureBar, float waterTempertureC)
-
+    sensorLT500.getLtReadings(waterDepthFt,waterTempertureC,waterPressureB );
+ 
+    Serial.print(F(","));
     Serial.print(waterTempertureC);
-    Serial.print("      ");
-    Serial.print(waterPressureBar, 7);
-    Serial.print("      ");
-    Serial.print(waterDepthM, 6);
+    Serial.print(F(",      "));
+    //Serial.print(waterPressureBar, 7);
+    //Serial.print(F(",     "));
+    //Serial.print(waterDepthM, 6);
+    //Serial.print(F(",     "));
+    Serial.print(waterDepthFt, 6);
     Serial.println();
 
-    delay(1500);
-
+    delay(5000);
 }
