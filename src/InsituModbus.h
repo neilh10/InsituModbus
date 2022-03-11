@@ -105,10 +105,11 @@ public:
     bool getValueLastTempC(float &value);
 
     static bool excpHandler(byte excpt);
+    #if defined SENSORMODBUSMASTER_DBG 
     // This sets a stream for debugging information to go to;
     void setDebugStream(Stream *stream){modbus.setDebugStream(stream);}
     void stopDebugging(void){modbus.stopDebugging();}
-
+    #endif //SENSORMODBUSMASTER_DBG 
 
 private:
     byte _model;

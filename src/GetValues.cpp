@@ -85,7 +85,9 @@ void setup()
     sensorLT500.begin(model, modbusAddress, &modbusSerial, DEREPin);
 
     // Turn on debugging
-    //sensorLT500.setDebugStream(&Serial);
+    #if !defined SENSORMODBUSMASTER_NO_DBG
+    sensorLT500.setDebugStream(&Serial);
+    #endif
 
     sensorLT500.setDevicePoll(IMDP_DEPTH_TEMPERATURE );
     Serial.println(F("Insitu LT500 220309-1648"));
