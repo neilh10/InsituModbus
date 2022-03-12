@@ -1,7 +1,7 @@
 /*
 InsituModbus.cpp
 
-Written by Neil Hancock from KellerVersion
+Written by Neil Hancock from KellerModbus
 
 Tested with 
 - a Insitu Series Level Troll series transducers LT500 - System Spec 1
@@ -23,7 +23,7 @@ In-Situ Modbus Communication Protocol Version 5.10
 
 // Start the communication
 // The "stream" device must be initialized and begun prior to running this.
-bool Insitu::begin(InsituModel model,byte modbusDeviceID, Stream *stream, int enablePin)
+bool insitu::begin(InsituModel model,byte modbusDeviceID, Stream *stream, int enablePin)
 {
     // Give values to variables;
     _deviceID = modbusDeviceID;
@@ -34,7 +34,7 @@ bool Insitu::begin(InsituModel model,byte modbusDeviceID, Stream *stream, int en
     return success;
 }
 
-bool Insitu::begin(InsituModel model,byte modbusDeviceID, Stream &stream, int enablePin)
+bool insitu::begin(InsituModel model,byte modbusDeviceID, Stream &stream, int enablePin)
 {
     return begin(model,modbusDeviceID, &stream, enablePin);
 }
@@ -42,18 +42,18 @@ bool Insitu::begin(InsituModel model,byte modbusDeviceID, Stream &stream, int en
 
 // This gets the modbus Device ID.
 // 2.3.1.8
-uint16_t Insitu::getDeviceHwID(void) //njh tested
+uint16_t insitu::getDeviceHwID(void) //njh tested
 {
     //2.3.1.8 Report (Slave) Device ID  special register 
     return modbus.uint16FromFrame(bigEndian, INSTU_MB_RDDEV_DEV_ID_IDX); 
 }
-float Insitu::getDeviceFwVer(void) //njh tested
+float insitu::getDeviceFwVer(void) //njh tested
 {
     //2.3.1.8 Report (Slave) Device ID  special register 
     return (((float)modbus.uint16FromFrame(bigEndian, INSTU_MB_RDDEV_FW_VER_IDX ))/100); 
 }
 
-bool Insitu::readDeviceIdFrame(void) 
+bool insitu::readDeviceIdFrame(void) 
 {   
     bool retRsp = false;
     //From 2.3.1.8 Report Slave Id - 
@@ -85,20 +85,20 @@ bool Insitu::readDeviceIdFrame(void)
 }
 
 // This gets the instrument serial number as a 32-bit unsigned integer (as specified by Insitu)
-long Insitu::getSerialNumber(void) //Nh Gets something 
+long insitu::getSerialNumber(void) //Nh Gets something 
 {
     return modbus.uint32FromFrame(bigEndian, INSTU_MB_RDDEV_SERIAL_NUM_IDX); 
 }
 
 
 // This returns previously fetched value
-bool Insitu::getValueLastTempC(float &value)
+bool insitu::getValueLastTempC(float &value)
 {
     value =  _LastTOB1;
     return true;
 }
 
-bool Insitu::getLtReadings( float &valueDepth1,float &valueTOB1,float &valueP1)
+bool insitu::getLtReadings( float &valueDepth1,float &valueTOB1,float &valueP1)
 {
 
     switch(_model)
@@ -146,7 +146,7 @@ bool Insitu::getLtReadings( float &valueDepth1,float &valueTOB1,float &valueP1)
     return true;
 }
 
-bool Insitu::excpHandler(byte excpt) {
+bool insitu::excpHandler(byte excpt) {
 #if 0
     if (NULL == Insitu::_debugStream1) return false; //Not handled
     Stream *_debugStream = Insitu::_debugStream1;
@@ -186,32 +186,4 @@ bool Insitu::excpHandler(byte excpt) {
 #endif //0
  }
 
-#if 0
-float Insitu::calcWaterDepthM(float &waterPressureBar, float &waterTempertureC)
-{
-    /// Initialize variables
-    float waterPressurePa; // in Pascals (kg/m/s2)
-    float waterDensity;    // in kmg/m2
-    float waterDepthM;     // in m
-    const float gravitationalConstant = 9.80665; // m/s2, meters per second squared
 
-    if (waterPressureBar == -9999)
-    {
-        waterDepthM = -9999;  // error or sensor not connected
-    }
-    else
-    {
-        waterPressurePa = 1e5 * waterPressureBar;
-        // Water density (kg/m3) from equation 6 from JonesHarris1992-NIST-DensityWater.pdf
-        waterDensity =  + 999.84847
-                        + 6.337563e-2 * waterTempertureC
-                        - 8.523829e-3 * pow(waterTempertureC,2)
-                        + 6.943248e-5 * pow(waterTempertureC,3)
-                        - 3.821216e-7 * pow(waterTempertureC,4)
-                        ;
-        waterDepthM = waterPressurePa/(waterDensity * gravitationalConstant);  // from P = rho * g * h
-    }
-    #define M_TO_FEET 3.28084
-    return waterDepthM/M_TO_FEET ;
-}
-#endif

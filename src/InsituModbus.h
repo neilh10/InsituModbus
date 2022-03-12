@@ -14,7 +14,7 @@ Tested with In-Situ Level Troll 500
 
 // The various Insitu sensors.
 // See also  https://github.com/EnviroDIY/YosemitechModbus
-typedef enum InsituModel
+typedef enum insituModel
 {
     //Acculevel_kellerModel = 0,
     //Nanolevel_kellerModel = 1,
@@ -77,7 +77,7 @@ typedef enum InsituMb_DevPoll
     IMDP_ALL=(IMDP_DEPTH | IMDP_TEMPERATURE | IMDP_PRESSURE)
 } InsituMb_DevPoll;
 
-class Insitu
+class insitu
 {
 
 public:
@@ -104,12 +104,13 @@ public:
     bool getLtReadings(float &valueDepth1, float &valueTOB1,float &vwaterPressureB );
     bool getValueLastTempC(float &value);
 
+    // FUT SENSORMODBUSMASTER_DBG 
+    // When debugging allow Insitu Specific Exceptions to be listed
     static bool excpHandler(byte excpt);
-    #if defined SENSORMODBUSMASTER_DBG 
     // This sets a stream for debugging information to go to;
     void setDebugStream(Stream *stream){modbus.setDebugStream(stream);}
     void stopDebugging(void){modbus.stopDebugging();}
-    #endif //SENSORMODBUSMASTER_DBG 
+    //#endif //SENSORMODBUSMASTER_DBG 
 
 private:
     byte _model;
