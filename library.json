@@ -29,7 +29,7 @@
       "note": "EnviroDIY SensorModbusMaster - Arduino library for communicating via modbus with the Arduino acting as the modbus master."
     }
   ],
-  "examples": ["examples/*/*.ino", "utilities/*/*.ino"],
+  "examples": ["examples/*/*.ino"],
   "export": {
     "exclude": ["doc/*", "sensor_tests/*"]
   }

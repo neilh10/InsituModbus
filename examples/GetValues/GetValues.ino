@@ -48,7 +48,7 @@ AltSoftSerial modbusSerial;  // On Mayfly, requires connection D5 & D6
 modbusMaster modbus;
 
 // Construct the Insitu modbus instance
-Insitu sensorLT500;
+insitu sensorLT500;
 bool success;
 
 int deviceId=0;
@@ -79,7 +79,9 @@ void setup()
     if (DEREPin > 0) pinMode(DEREPin, OUTPUT);
 
     Serial.begin(115200);  // Main serial port for debugging via USB Serial Monitor
-    modbusSerial.begin(9600);  // The modbus serial stream - Baud rate MUST be 9600.
+    #define MODBUS_BAUDRATE  9600
+    //#define MODBUS_BAUDRATE 19200
+    modbusSerial.begin(MODBUS_BAUDRATE);  // The modbus serial stream - Baud rate MUST be 9600.
 
     // Start up the modbus sensorLT500
     sensorLT500.begin(model, modbusAddress, &modbusSerial, DEREPin);
