@@ -22,7 +22,42 @@ typedef enum insituModel
     OTHER=99   // Use if the sensor model is another model.
 } InsituModel;
 
-#define INSTU_MB_ERROR_RESULTS -9999
+//#define INSTU_MB_ERROR_RESULTS -9999
+/**
+ * @anchor insitu_pressure
+ * @name Pressure
+ * The pressure variable from a Insitu modbus sensor
+ */
+/**@{*/
+/// @brief Variable default Bar if no reading, can be overriden at cc. (readings are in mBar 1/1000th of this) 
+#if !defined SNSRDEF_IP_WATERPRESSUREBAR 
+#define SNSRDEF_IP_WATERPRESSUREBAR -0.0009876
+#endif
+/**@}*/
+
+/**
+ * @anchor insitu_temp
+ * @name Temperature
+ * The temperature variable from a Insitu modbus sensor
+ */
+/**@{*/
+/// @brief Variable default if no reading, can be overriden at cc
+#if !defined SNSRDEF_IP_WATERTEMPERATUREC
+#define SNSRDEF_IP_WATERTEMPERATUREC -9.876
+#endif
+/**@}*/
+
+/**
+ * @anchor insitu_height
+ * @name Height
+ * The height variable from a Insitu modbus sensor
+ */
+/**@{*/
+/// @brief Variable default if no reading, can be overriden at cc
+#if !defined SNSRDEF_IP_WATERDEPTHM
+#define SNSRDEF_IP_WATERDEPTHM -0.09876
+#endif
+/**@}*/
 
 //Section 7 
 #define INSTU_MB_DEVICE_MAP_BASE 0

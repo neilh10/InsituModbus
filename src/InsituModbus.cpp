@@ -109,7 +109,7 @@ bool insitu::getLtReadings( float &valueDepth1,float &valueTOB1,float &valueP1)
                 if (modbus.getRegisters(MODBUS_READ_HREG, INSTU_MB_DEVICE_PARAM1_VALUE, INSTU_MB_PARAM_VALUE_SZ)) {
                     valueP1 = modbus.float32FromFrame(bigEndian, MODBUS_FM_START);
                 } else {
-                    valueP1 = INSTU_MB_ERROR_RESULTS;  // Temperature (C) on board sensor 1
+                    valueP1 = SNSRDEF_IP_WATERTEMPERATUREC;  // Temperature (C) on board sensor 1
                 }
                 _LastPressure1 = valueP1;                            
             } //IMDP_PRESSURE 
@@ -117,7 +117,7 @@ bool insitu::getLtReadings( float &valueDepth1,float &valueTOB1,float &valueP1)
                 if (modbus.getRegisters(MODBUS_READ_HREG, INSTU_MB_DEVICE_PARAM2_VALUE, INSTU_MB_PARAM_VALUE_SZ)) {
                     valueTOB1 = modbus.float32FromFrame(bigEndian, MODBUS_FM_START);
                 }else {
-                    valueTOB1 = INSTU_MB_ERROR_RESULTS;  // Temperature (C) on board sensor 1
+                    valueTOB1 = SNSRDEF_IP_WATERTEMPERATUREC ;  // Temperature (C) on board sensor 1
                 }
                 _LastTOB1 = valueTOB1;
             }//IMDP_TEMPERATURE
@@ -125,7 +125,7 @@ bool insitu::getLtReadings( float &valueDepth1,float &valueTOB1,float &valueP1)
                 if (modbus.getRegisters(MODBUS_READ_HREG, INSTU_MB_DEVICE_PARAM3_VALUE , INSTU_MB_PARAM_VALUE_SZ)) {
                     valueDepth1 = modbus.float32FromFrame(bigEndian, MODBUS_FM_START);
                 }else {
-                    valueDepth1 = INSTU_MB_ERROR_RESULTS;  // Depth (?) on board sensor 1
+                    valueDepth1 = SNSRDEF_IP_WATERDEPTHM;  // Depth (?) on board sensor 1
                 }
                 _LastDepth =valueDepth1;
             }//IMDP_DEPTH 
